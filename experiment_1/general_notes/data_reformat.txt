@@ -1,0 +1,40 @@
+trying to convert this god awful dataset into something manageable
+
+Procedure[Block]
+	testproc = block 1
+	testproc1 = block 2
+
+it looks like slide2 is where list level information is stored
+	she also has highlighted `Slide2.RESP`, assuming this is where they enter how they think the items are related
+
+to the right of slide2:
+	`truth` is the correct category of the list
+	`correct` is the correct name of the instance
+
+prompt 1 & 2 are very important
+	prompt 1 corresponds to reponses from block 1, 2 to 2
+	this stores trial-level RT
+	it also stores prompt1.OnsetTime, which can be used to put things back in order
+
+so, for each subject, order by prompt1 onset time then by prompt 2 onset time
+
+list id is stored wide in:
+	Cathet1:8; Cathomo1:8; same for RAT
+	im deleting her stupid long conversions
+
+important vars:
+	"Subject" = subject
+	"Relatedness" = context factor 
+	"First Half Connection" = type of list (rat vs cat) and whether they guessed the list theme correctly (blank for block 2, where lists are labeled)
+		im guessing (in first half) we're dropping observations on this var where value = "rat correct" (there should be 12 out of 84)
+	"Correct" = item
+	"Procedure[Block]" = testproc is block 1, testproc1 is block 2
+	"prompt1.RT" = RTs in block 1
+	"prompt2.RT" = RTs in block 2
+	"Error?" = 'x' if yes, blank if no
+		recoding to "error", 1 if yes, 0 if no
+	"ItemType.Real" = item type (RAT vs category)
+	"Cycle" = which cycle of list presentations are we in? (each list type was presented consecutively 5 times, order of items randomized within list)
+
+
+

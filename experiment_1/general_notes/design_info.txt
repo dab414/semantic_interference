@@ -1,0 +1,36 @@
+block X context X item type X cycle
+
+considered removing third item in each cycle because it's completely predictable
+
+first step would be to try to replicate the anova results from their spss analysis
+
+
+
+experiment 1 (method starts around p 25)
+
+factors:
+	item type (RAT vs common category)
+	context (homogeneous vs heterogeneous)
+	labeling (labeled vs nonlabeled)
+	she also throws in cycle seemingly out of nowhere
+	solvability (solvable, unsolvable, unrelated) ## i don't think this factor was in exp1, however
+
+speculative:
+	each list contains three items
+	each list was presented for five cycles
+	the five cycles for each list were presented consecutively 
+	the order of cycle type (i.e., RAT vs common & context) was random within blocks
+	labeling was systematically manipulated between halves of the experiment; WHY?
+		such that the first half was always unlabeled, the second half was always labeled
+		so in text they actually just refer to the factor "label" as block, of which there were only 2 (mapping on to two halves of the experiment)
+
+
+trimming:
+	rts <= 150ms removed
+	during the first half with no label, RAT sets were excluded if Ps successfully stated the solution to the set
+		12 out of 84 total RAT sets removed, 6 for shell RAT, 6 for tree rat
+	also during first half, common category sets were removed when Ps failed to identify common category
+		2 out of 84 sets removed
+	removing third item of each cycle
+
+	

@@ -1,0 +1,131 @@
+---
+title: "Semantic Interference -- Experiment 1"
+output: html_notebook
+---
+
+# Preprocessing 
+
+The trimming procedures reported in the manuscript were the following:  
+
+* RTs faster than 150 ms
+* During first block (with no labels), RAT lists were excluded if Ps successfully found connection amongst items
+    * She reports 12 out of 84 lists were successfully identified
+* Also during first block, common category lists were removed when Ps failed to identify common category
+    * Reported 2 out of 84 lists removed
+* Dropping third item from each list cycle
+    * Ps were able to predict the item and RTs were artificially lower as a result
+       
+## Load Libraries and data
+**Keeping only the relevant variables**
+
+```{r}
+library(tidyverse)
+library(data.table)
+```
+
+```{r}
+current_data <- fread('../data/raw_data.csv')
+```
+
+```{r}
+keep <- t(matrix(c('Subject', 'subject',
+                    'Relatedness', 'context',
+                    'First Half Connection', 'list_type_response',
+                    'correct', 'item',
+                    'Procedure[Block]', 'block',
+                    'error', 'error',
+                    'prompt1.RT', 'rt_block1',
+                    'prompt2.RT', 'rt_block2',
+                    'ItemType.Real', 'item_type',
+                    'Cycle', 'cycle'
+                 ), nrow = 2))
+```
+
+```{r}
+current_data <- current_data[, keep[, 1], with = FALSE]
+colnames(current_data) <- keep[,2]
+```
+```{r}
+head(current_data)
+str(current_data)
+```
+
+### Some minor recoding
+
+Make list type and list identification accuracy two separate variables.
+
+```{r}
+current_data$list_type_response2 <- ifelse(current_data$list_type_response == '', 'null null', current_data$list_type_response)
+x <- strsplit(current_data$list_type_response2, ' ')
+x <- data.frame(matrix(unlist(x), ncol = 2, byrow = T))
+current_data$list_response <- x[,2]
+head(current_data)
+current_data <- select(current_data, -list_type_response, -list_type_response2)
+```
+
+Combine rt vars into one variable.
+
+```{r}
+current_data <- current_data %>% 
+  mutate(rt = ifelse(!is.null(rt_block1), rt_block1, rt_block2)) %>% 
+  select(-rt_block1, -rt_block2)
+```
+
+Convert data types.
+
+```{r}
+current_data <- current_data %>% 
+  mutate(subject = as.factor(subject),
+         context = as.factor(context), 
+         item = as.factor(item),
+         block = as.factor(ifelse(block == 'Testproc', 1, ifelse(block == 'Testproc1', 2, NA))),
+         item_type = as.factor(item_type)) %>% 
+         data.table()
+str(current_data)
+```
+
+Execute trimming.
+
+```{r}
+current_data[, quick_flag := c(0,0,1), by = cycle]
+rows_before <- nrow(current_data)
+current_data <- current_data %>%
+  ## code vars to catch whether they correctly guessed RATs or were incorrect for common category
+  mutate(acc_check = ifelse(item_type == 'category' & list_response == 'miss', 1, 
+                            ifelse(item_type == 'RAT' & list_response == 'correct', 1, 0))) %>% 
+  filter(rt > 150,
+         acc_check == 0,
+         error == 0,
+          quick_flag == 0) %>% 
+    select(-acc_check, -quick_flag) %>%
+    data.table()
+
+rows_after <- nrow(current_data)
+
+paste0('Trimming based on the criteria specified above resulted in a loss of ', round((1 - (rows_after / rows_before)) * 100, 2), '% of the data.')
+```
+
+Save the trimmed data.
+
+```{r}
+write.csv(current_data, '../data/exp1_clean.csv', row.names = FALSE)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
