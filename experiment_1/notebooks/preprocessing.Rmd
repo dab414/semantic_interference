@@ -103,6 +103,7 @@ current_data <- current_data %>%
 rows_after <- nrow(current_data)
 
 paste0('Trimming based on the criteria specified above resulted in a loss of ', round((1 - (rows_after / rows_before)) * 100, 2), '% of the data.')
+head(current_data)
 ```
 
 Save the trimmed data.
