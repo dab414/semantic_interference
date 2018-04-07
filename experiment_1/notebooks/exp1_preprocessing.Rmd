@@ -66,8 +66,9 @@ current_data <- select(current_data, -list_type_response, -list_type_response2)
 Combine rt vars into one variable.
 
 ```{r}
-current_data <- current_data %>% 
-  mutate(rt = ifelse(!is.null(rt_block1), rt_block1, rt_block2)) %>% 
+## this code didn't work for whatever reason, so I'm gonna do this the ugly way
+ current_data <- current_data %>%
+   mutate(rt = ifelse(!is.na(rt_block1), rt_block1, rt_block2)) %>% 
   select(-rt_block1, -rt_block2)
 ```
 

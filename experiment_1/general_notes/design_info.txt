@@ -32,3 +32,7 @@ trimming:
 	also during first half, common category sets were removed when Ps failed to identify common category
 		2 out of 84 sets removed
 	removing third item of each cycle
+
+design
+	it looks like the design she reports is what i indicated above
+		block X context X item type X cycle
