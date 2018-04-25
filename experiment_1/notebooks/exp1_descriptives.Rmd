@@ -1,0 +1,190 @@
+---
+title: "Descriptive Exploration"
+output: html_notebook
+---
+
+This document is intended to explore the descriptive distributions and relationships between the variables in the Experiment 1 data. Previous RMarkdown notebooks included [preprocessing]('exp1_preprocessing.nb.html') and [matching previously reported statistics and means]('exp1_anova_replication.nb.html').
+
+## Document Outline
+Because we're dealing with discrete, experimentally-manipulated factors, it limits the scope of what we can investigate descriptively. So the approach will be as follows:  
+
+* Assess the distribution of the outcome.
+* Analyze bivariate relationships between all factors and outcome.
+* Plot theoretically interesting parts of the design. 
+
+Load libraries and data:
+
+```{r}
+library(tidyverse)
+library(data.table)
+```
+
+```{r}
+current_data <- fread('../data/exp1_clean.csv', stringsAsFactors = TRUE)
+current_data <- current_data %>% 
+  mutate(cycle = as.factor(cycle))
+head(current_data)
+str(current_data)
+
+```
+
+
+### Assess Outcome Variable 
+
+```{r}
+current_data %>% 
+  ggplot(aes(x = rt)) + geom_histogram()
+
+current_data %>% 
+  summarize('Overall RT Mean' = mean(rt), 'Overall RT SD' = sd(rt))
+```
+
+
+The distribution looks surprisingly normal considering we're dealing with RTs. Average overall response time is right around half a second. [insert other normality tests?]
+
+### Assess Bivariate Relationships
+
+I'll cheat and start by focusing on a variable that I know (from the ANOVA) significantly impacted RTs——context.
+
+```{r}
+current_data %>% 
+  ggplot(aes(x = rt)) + geom_density(aes(fill = context), alpha = .7)
+```
+
+
+One thing I'm noticing here is that there might just be fewer observations for the homogeneous context vs heterogeneous context condition. It could also be that the homogeneous distribution is skewed slightly more to the right, giving the impression that there's less data. It's worth looking at cell counts in the design (disregarding subject for the time being):
+
+```{r}
+current_data %>% 
+  group_by(context, block, item_type, cycle) %>% 
+  summarize(count = n()) %>% 
+  arrange(item_type, context, block) %>% 
+  unite(variable, item_type, context, block) %>% 
+  spread(variable, count)
+  
+  
+
+current_data %>% 
+  group_by(context, block, item_type, cycle) %>% 
+  summarize(count = n()) %>% 
+  arrange(item_type, context, block) %>% 
+  ggplot(aes(x = block, y = count)) + geom_bar(stat= 'identity', aes(fill = context), position = 'dodge') + facet_grid(cycle ~ item_type) + ylim(0,250)
+```
+
+
+It appears as though there are systematically fewer trials for RAT-homogeneous-block2 conditions (across all cycles). This is maybe due to the fact that trials during block 1 were excluded when participants correctly found connection amongst RAT items. It makes sense that this would have happened more often in homogeneous contexts. All other variability between cells is most likely explained by error trimming, etc. none of these differences in cell sizes appear large enough to warrant concern.
+
+Let's look at the distribution of RTs across each of the predictors.
+
+```{r}
+current_data %>% 
+  ggplot(aes(x = rt)) + geom_density(aes(fill = context), alpha = .5) + facet_grid(cycle ~ item_type + block)
+```
+
+It looks like, on the whole, RTs tend to be slower for homogeneous relative to heterogeneous contexts. It also looks like there's just more variability in RTs for homogeneous contexts.
+
+
+### Plotting interesting parts of the design
+
+The core interaction for the semantic interference theory is that participants will be slower to name items when presented in a homogeneous category, and that this cost will inflate over time.  
+The present study additionally posits that RAT items will be treated similarly to related-category items, but *only* if the solution to the RAT is known (i.e., if participants are aware of the connection between the items). So here's an order in which we'll look at the trends in the data:  
+
+* context X cycle (common category only)
+  * Should see RTs slower for homogeneous context, and the difference should increase over cycles
+* context X cycle X item type (for block 1 only)
+  * If participants aren't treating RATs like common category items when they *don't* know the solution, we should only see the 2-way interaction between context and cycle for common-category item types (not RATs) in block 1
+* context X cycle X item type (for block 2 only)
+  * In block 2 (when participants are given the RAT solution), responses should look similar across item types
+  
+**Context by cycle interaction (for common category only)
+
+```{r}
+N <- current_data %>% 
+  group_by(subject) %>% 
+  summarize(n()) %>% 
+  nrow(.)
+
+current_data %>% 
+  filter(item_type == 'category') %>% 
+  group_by(subject, context, cycle, block) %>% 
+  summarize(r_time = mean(rt)) %>% 
+  group_by(context, cycle) %>% 
+  summarize(rt = mean(r_time), se = sd(r_time) / sqrt(N)) %>% 
+  ggplot(aes(x = cycle, y = rt, group = context)) + geom_line(aes(color = context), size = 2) + 
+  geom_point() + 
+  geom_ribbon(aes(ymin = rt - se, ymax = rt + se, fill = context), alpha = .3) + ylab('Response Time (ms)') + ggtitle('For Common Category Only') + ylim(500,650)
+
+```
+
+RTs for homogeneous items is certainly slower than for heterogeneous, but that difference doesn't appear to increase over cycles. Now let's break this down by item type for block 1 only.
+
+```{r}
+current_data %>% 
+  filter(block == '1') %>% 
+  group_by(subject, context, cycle, block, item_type) %>% 
+  summarize(r_time = mean(rt)) %>% 
+  group_by(context, cycle, item_type) %>% 
+  summarize(rt = mean(r_time), se = sd(r_time) / sqrt(N)) %>% 
+  ggplot(aes(x = cycle, y = rt, group = context)) + geom_line(aes(color = context), size = 2) + 
+  geom_point() + 
+  geom_ribbon(aes(ymin = rt - se, ymax = rt + se, fill = context), alpha = .3) + ylab('Response Time (ms)') + ggtitle('For Block 1 Only') + facet_wrap(~item_type) + ylim(500,650)
+```
+
+It's not clear that the two-way interaction between cycle and context is coming through for category item types during block 1, but it *is* clear that there doesn't appear to be such a two-way interaction for RATs.  
+Now we'll compare this to data from block 2, where participants are aware of the solution to RATs and we'd expect RAT data to more closely approximate the category data.
+
+```{r}
+current_data %>% 
+  filter(block == '2') %>% 
+  group_by(subject, context, cycle, block, item_type) %>% 
+  summarize(r_time = mean(rt)) %>% 
+  group_by(context, cycle, item_type) %>% 
+  summarize(rt = mean(r_time), se = sd(r_time) / sqrt(N)) %>% 
+  ggplot(aes(x = cycle, y = rt, group = context)) + geom_line(aes(color = context), size = 2) + 
+  geom_point() + 
+  geom_ribbon(aes(ymin = rt - se, ymax = rt + se, fill = context), alpha = .3) + ylab('Response Time (ms)') + ggtitle('For Block 2 Only') + facet_wrap(~item_type) + ylim(500,650)
+```
+
+Looks like a lot of noise. I'm going to try something wild and try to more closely visualize the subject and item variability around these means (which is the whole point for trying to model random effects). If we see that some subjects (or items) are systematically differing from others in certain ways, it would provide good motivation for considering the influence of random effects.
+
+```{r}
+head(current_data)
+```
+
+
+```{r}
+subject_means <- current_data %>% 
+  group_by(subject, context, cycle, block, item_type) %>% 
+  summarize(rt = mean(rt)) %>% 
+  mutate(code = 'subject') %>% 
+  rename(id = subject) 
+  
+   
+random_means <- current_data %>% 
+  group_by(item, context, cycle, block, item_type) %>% 
+  summarize(rt = mean(rt)) %>% 
+  mutate(code = 'item') %>% 
+  rename(id = item) %>% 
+  rbind(subject_means) %>% 
+  ungroup() %>% 
+  mutate(id = as.factor(id),
+         code = as.factor(code)) 
+  
+
+current_data %>% 
+  group_by(subject, context, cycle, block, item_type) %>% 
+  summarize(r_time = mean(rt)) %>% 
+  group_by(context, cycle, item_type, block) %>% 
+  summarize(rt = mean(r_time), se = sd(r_time) / sqrt(N)) %>% 
+  ggplot(aes(x = cycle, y = rt, group = 1)) + geom_line(aes(), size = 1) + 
+  geom_point() + 
+  geom_ribbon(aes(ymin = rt - se, ymax = rt + se, fill = context), alpha = .3) + ylab('Response Time (ms)') + 
+  facet_grid(block~item_type + context) + 
+  #ylim(500,650) +
+  geom_line(data = random_means, aes(x = cycle, y = rt, group = id, linetype = code), alpha = .7)
+```
+
+There's a lot going on here (note the different scale), but I'd say there definitely appears to be a good deal of between-item and between-subject variability in what would be both the intercepts and slopes of the means. So it's entirely possible that we'd see more meaningful differences between conditions emerge after controlling for the theoretically-uninteresting variability driven by subjects and items. Qualitatively speaking there perhaps appears to be more variability driven by subjects rather than items.
+
+
+

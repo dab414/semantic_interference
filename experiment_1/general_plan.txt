@@ -1,0 +1,24 @@
+plan of attack for analyses
+
+1 - Preprocessing
+	done
+
+2 - ANOVA
+	Try to match the means and results from the original report
+	done
+
+3 - Descriptives
+	Take a closer look at descriptive trends in the data
+
+4 - Model fit and evaluation
+	Find a model that fits
+		this will be hard given all the factors
+
+	Evaluate fit via k-fold validation
+
+	Generate uncertainty estimates around parameters via bootstrapping
+		this and the previous step covered here: https://rpubs.com/ledongnhatnam/241926
+
+	Generate and plot predictions
+		https://stats.stackexchange.com/questions/135255/obtaining-adjusted-predicted-proportions-with-lme4-using-the-glmer-function
+

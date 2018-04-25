@@ -5,8 +5,9 @@ output: html_notebook
 
 # Preprocessing 
 
-The trimming procedures reported in the manuscript were the following:  
+Trials were trimmed if they met one or more of the following criteria:  
 
+* Incorrect response
 * RTs faster than 150 ms
 * During first block (with no labels), RAT lists were excluded if Ps successfully found connection amongst items
     * She reports 12 out of 84 lists were successfully identified

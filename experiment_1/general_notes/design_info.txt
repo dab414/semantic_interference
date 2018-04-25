@@ -10,8 +10,14 @@ experiment 1 (method starts around p 25)
 
 factors:
 	item type (RAT vs common category)
+		items nested within type
 	context (homogeneous vs heterogeneous)
+		items fully crossed
 	labeling (labeled vs nonlabeled)
+		items crossed
+	cycle
+		items crossed within cycles
+
 	she also throws in cycle seemingly out of nowhere
 	solvability (solvable, unsolvable, unrelated) ## i don't think this factor was in exp1, however
 
@@ -36,3 +42,19 @@ trimming:
 design
 	it looks like the design she reports is what i indicated above
 		block X context X item type X cycle
+
+glmm
+	
+	fixed effects
+		all main effects and interactions
+
+	random effects
+		try maximal.. it'll never converge
+
+predictions
+	the basic SE effect is the context X cycle interaction
+	they're predicting you'll see the same pattern in RATs (when given solution) as you would for categories
+		but that the effect will dissipate faster over time for RATs... isn't it supposed to be cumulative
+	if this is true, then RAT should appear comparable to category only in block 2, where answers are given
+		not sure how item type is factoring into this..
+		^ ah, right it's part of the overall SE effect
