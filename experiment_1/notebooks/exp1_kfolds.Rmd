@@ -1,0 +1,154 @@
+---
+title: "K-Folds CrossValidation"
+output:
+  html_document:
+    df_print: paged
+---
+
+The purpose of this notebook is to perform a k-folds crossvalidation of the lmer model. I'm following along with an example from [here](https://rpubs.com/ledongnhatnam/241926)
+
+**Import libraries and data:**
+
+```{r}
+library(tidyverse)
+library(lme4)
+library(parallel)
+library(data.table)
+```
+
+```{r}
+current_data <- fread('../data/exp1_clean.csv')
+```
+
+First order of business is to build a generalized, custom function of the function cvTools::cvFolds
+
+```{r}
+## cvFolds(n `number of observations to be split into groups`, K = 5 `number of groups into which observations should be split`, R = 1 `number of replications`)
+
+fold_cv <- function(data, k) {
+  folds <- cvTools::cvFolds(nrow(data), K = k)
+  invisible(folds)
+}
+```
+
+Then apply to the data.  
+*I'm actually unsure how this implementation is different from just using `cvFolds` straight up, so I'll test that out.*
+
+```{r}
+fold <- current_data %>% fold_cv(., k = 10)
+fold1 <- cvTools::cvFolds(nrow(current_data), K = 10)
+
+str(fold)
+str(fold1)
+```
+
+Yea the resulting datasets seem identical, so I'm a little unsure as to what the custom function grants us. Maybe it'll become clear later. 
+
+`subsets` maps on to `subject`, and `which` maps on to the fold group number.  
+
+The next step is to add on to the current data set empty columns for the values we'll be deriving from running the model on each fold we've made in the data.
+
+```{r}
+temp <- current_data %>% mutate(fold_id = rep(0, nrow(.)),
+                                holdoutpred = rep(0, nrow(.)),
+                                mse = rep(0, nrow(.)),
+                                rmse = rep(0, nrow(.)),
+                                mae = rep(0, nrow(.)),
+                                r2 = rep(0, nrow(.)),
+                                AIC = rep(0, nrow(.)),
+                                BIC = rep(0, nrow(.)))
+```
+
+Now I'll run the model we settled on in the "Inferential" notebook, run it on each fold and evaluate performance.
+
+```{r}
+for (i in 1:10){
+  ## use the fold data to break current data into train and test
+  train <- temp[fold$subsets[fold$which != i],]
+  validation <- temp[fold$subsets[fold$which == i],]
+  ## run the model on the training data
+  m1 <- lmer(rt ~ cycle * item_type * context * block + 
+             (1 | subject) + 
+             (1 | subject:cycle) + 
+             (1 | subject:block) + 
+             (1 | item:item_type) + 
+             (1 | item:context),
+           data = train, control = lmerControl(optimizer = 'Nelder_Mead', optCtrl = list(maxfun = 100000)))
+  proba <- predict(m1, newdata = validation)
+  true <- validation$rt
+  error <- true - proba
+  rmse <- sqrt(mean(error^2))
+  mse <- rmse^2
+  r2 <- 1 - (sum((true-proba)^2)) / (sum((true - mean(true))^2))
+  mae <- mean(abs(error))
+  temp[fold$subsets[fold$which == i], ]$fold_id <- i
+  temp[fold$subsets[fold$which == i], ]$holdoutpred <- proba
+  temp[fold$subsets[fold$which == i], ]$mse <- mse
+  temp[fold$subsets[fold$which == i], ]$rmse <- rmse
+  temp[fold$subsets[fold$which == i], ]$mae <- mae
+  temp[fold$subsets[fold$which == i], ]$r2 <- r2
+  temp[fold$subsets[fold$which == i], ]$AIC <- AIC(m1)
+  temp[fold$subsets[fold$which == i], ]$BIC <- BIC(m1)
+}
+```
+
+
+```{r}
+temp %>% 
+  gather(rmse:BIC, key = 'Metric', value = 'Value') %>% 
+  ggplot(aes(x = Metric, y = Value, fill = Metric)) + geom_boxplot() + coord_flip() + facet_wrap(~Metric, ncol = 1, scales = 'free') + theme_bw()
+```
+
+Hard to make sense of it without something to compare to. We can compare to a model without random effects.
+
+```{r}
+temp <- current_data %>% mutate(fold_id = rep(0, nrow(.)),
+                                holdoutpred = rep(0, nrow(.)),
+                                mse = rep(0, nrow(.)),
+                                rmse = rep(0, nrow(.)),
+                                mae = rep(0, nrow(.)),
+                                r2 = rep(0, nrow(.)),
+                                AIC = rep(0, nrow(.)),
+                                BIC = rep(0, nrow(.)))
+```
+
+```{r}
+for (i in 1:10){
+  ## use the fold data to break current data into train and test
+  train <- temp[fold$subsets[fold$which != i],]
+  validation <- temp[fold$subsets[fold$which == i],]
+  ## run the model on the training data
+  m2 <- lm(rt ~ cycle * item_type * context * block, data = train)
+  proba <- predict(m1, newdata = validation)
+  true <- validation$rt
+  error <- true - proba
+  rmse <- sqrt(mean(error^2))
+  mse <- rmse^2
+  r2 <- 1 - (sum((true-proba)^2)) / (sum((true - mean(true))^2))
+  mae <- mean(abs(error))
+  temp[fold$subsets[fold$which == i], ]$fold_id <- i
+  temp[fold$subsets[fold$which == i], ]$holdoutpred <- proba
+  temp[fold$subsets[fold$which == i], ]$mse <- mse
+  temp[fold$subsets[fold$which == i], ]$rmse <- rmse
+  temp[fold$subsets[fold$which == i], ]$mae <- mae
+  temp[fold$subsets[fold$which == i], ]$r2 <- r2
+  temp[fold$subsets[fold$which == i], ]$AIC <- AIC(m1)
+  temp[fold$subsets[fold$which == i], ]$BIC <- BIC(m1)
+}
+```
+
+```{r}
+temp %>% 
+  gather(rmse:BIC, key = 'Metric', value = 'Value') %>% 
+  ggplot(aes(x = Metric, y = Value, fill = Metric)) + geom_boxplot() + coord_flip() + facet_wrap(~Metric, ncol = 1, scales = 'free') + theme_bw()
+```
+
+
+Model predictions seem to be somewhat equally accurate regardless of whether random effects are estimated or not.
+
+
+
+
+
+
+

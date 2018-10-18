@@ -159,7 +159,7 @@ subject_means <- current_data %>%
   mutate(code = 'subject') %>% 
   rename(id = subject) 
   
-   
+## some weird error here
 random_means <- current_data %>% 
   group_by(item, context, cycle, block, item_type) %>% 
   summarize(rt = mean(rt)) %>% 
@@ -185,6 +185,35 @@ current_data %>%
 ```
 
 There's a lot going on here (note the different scale), but I'd say there definitely appears to be a good deal of between-item and between-subject variability in what would be both the intercepts and slopes of the means. So it's entirely possible that we'd see more meaningful differences between conditions emerge after controlling for the theoretically-uninteresting variability driven by subjects and items. Qualitatively speaking there perhaps appears to be more variability driven by subjects rather than items.
+
+
+## 6-11 Plot the marginal three-way interaction
+block X context X item type
+
+```{r}
+current_data %>% 
+  mutate(block = as.factor(block)) %>% 
+  group_by(subject, block, context, item_type) %>% 
+  summarize(rt = mean(rt)) %>% 
+  group_by(block, context, item_type) %>% 
+  summarize(r_time = mean(rt), se = sd(rt) / sqrt(n())) %>% 
+  ggplot(aes(x = context, y = r_time, group = item_type)) + geom_bar(position = 'dodge', aes(fill = item_type), stat = 'identity') + 
+  geom_errorbar(aes(ymin = r_time - se, ymax = r_time + se), position = position_dodge(width = .9), width = .5) + facet_wrap(~block) + ylim(0, 800)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

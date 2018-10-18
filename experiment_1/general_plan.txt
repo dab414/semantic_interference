@@ -9,6 +9,7 @@ plan of attack for analyses
 
 3 - Descriptives
 	Take a closer look at descriptive trends in the data
+	done
 
 4 - Model fit and evaluation
 	Find a model that fits
@@ -18,6 +19,9 @@ plan of attack for analyses
 
 	Generate uncertainty estimates around parameters via bootstrapping
 		this and the previous step covered here: https://rpubs.com/ledongnhatnam/241926
+
+		^ i'll also have to find a way to estimate significance of parameters, lmer doesn't give ps
+			lme4 faq: http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html
 
 	Generate and plot predictions
 		https://stats.stackexchange.com/questions/135255/obtaining-adjusted-predicted-proportions-with-lme4-using-the-glmer-function

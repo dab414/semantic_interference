@@ -1,0 +1,45 @@
+6/8
+	finished model selection
+	did kfolds
+		learned that a model without random effects actually predict the data better...
+
+6/5
+
+	a little mad at my past self, the notes weren't great
+	I came up with the new model using the `:` notation, but I can't find the source for that
+	the model doesn't converge (on the laptop) using bobyqa optimizer
+	also the fixed effects structure is such a disaster because the model estimates a parameter for *each* level of all categorical vars
+		did i ever figure out what a solution to that is??
+		that's in addition to all the interactions...
+		hmm okay but when you run the Wald test with car::Anova it actually estimates significance appropriately
+		and i guess part of the idea with the bootstrapping is that you can organically get significance for parameters
+	it's clear i did the inferential notebook in a hurry, or at least didn't feel like annotating it, and now paying the price for that
+
+
+5/1
+
+Inferential analyses
+
+	one challenge will be figuring out how to deal with all these categorical factors in the model
+	do i dummy code...?
+	if not how do i interpret?
+
+	golden pony: http://www.mypolyuweb.hk/~sjpolit/coding_schemes.html
+		from here:
+			dummy coding for factors is default
+			to see how factors are default coded: contrasts(current_data$factor_var)
+			dummy coding is only good for looking at simple effects
+				need effect coding to look at main effects or effect thats a subset of the design
+					eg a two-way interaction in a three-way design
+				doesn't talk about how to deal with categorical variable with > 2 levels
+					especially confusing if num levels is odd
+				oooh use model comparison: http://www.page-gould.com/r/anova/
+					look up how to use `:` notation when specifying model formula
+
+	i also downloaded another bates paper (~ 50 pgs) and put it with the rest of the mixed model resources
+
+
+	trying to run with only main effects of slopes:
+		m1 <- lmer(rt ~ cycle * item_type * context * block + (1 + cycle + item_type + context + block | subject) + (1  + cycle + item_type + context + block | item), data = current_data)
+
+	hasn't converged and it's been prob ~ 15-20 min

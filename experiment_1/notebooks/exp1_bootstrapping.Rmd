@@ -1,0 +1,33 @@
+---
+title: "Bootstrapping"
+output: html_notebook
+---
+
+This is my attempt to get the significance of the parameters in the model via bootstrapping (ie., random sampling from the existing data).
+
+```{r}
+library(tidyverse)
+library(boot)
+library(parallel)
+library(lme4)
+library(data.table)
+```
+
+```{r}
+current_data <- fread('../data/exp1_clean.csv')
+head(current_data)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
